@@ -1,0 +1,159 @@
+---
+title: "DATA608_Chunjie_Nan_Module1_HW1"
+author: "Chunjie Nan"
+date: "1/28/2022"
+output: html_document
+---
+
+
+
+**Principles of Data Visualization and Introduction to ggplot2**
+
+I have provided you with data about the 5,000 fastest growing companies in the US, as compiled by Inc. magazine. lets read this in:
+
+```{r}
+
+inc <- read.csv("https://raw.githubusercontent.com/charleyferrari/CUNY_DATA_608/master/module1/Data/inc5000_data.csv", header= TRUE)
+
+```
+
+And lets preview this data:
+
+```{r}
+
+head(inc)
+
+```
+
+```{r}
+
+summary(inc)
+
+```
+
+Think a bit on what these summaries mean. Use the space below to add some more relevant non-visual exploratory information you think helps you understand this data:
+
+
+From above summary, I have a few concern and seems need to fix before continue below questions.
+
+First, there are 5001 observations in the data set, but the ranking shows 5000 as the maximum according to the summary. Therefore, with View() function, I found that the last two ranking - 5000th and 5001 overlapped the rankings. so I'm going to revise the last ranking as 5001. 
+
+Second, the min of revenue shows as scientific notation, I'm going to convert the revenue column to numbers. 
+
+Third, my third concern is that the max growth rate is 421.48, and mean is 4.621. Need to do further investigation to see if the max growth rate makes sense or not. 
+
+```{r}
+str(inc)
+
+# revise the last rank to 5001th.
+inc[5001,1]<-5001
+
+# convert scientific notations to numbers in revenue column.
+options(scipen = 100, digits = 4)
+
+```
+
+## Question 1
+
+Create a graph that shows the distribution of companies in the dataset by State (ie how many are in each state). There are a lot of States, so consider which axis you should use. This visualization is ultimately going to be consumed on a 'portrait' oriented screen (ie taller than wide), which should further guide your layout choices.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(gridExtra)   
+
+comp_by_state <- inc %>%
+    group_by(State) %>%
+    count() %>%
+    arrange(desc(n))
+
+    
+
+
+ggplot(comp_by_state, aes(x = reorder(State, n), y = n))+
+  geom_col(fill = 'red') +
+  coord_flip()+ 
+  xlab('States')+
+  ylab('Count Companies')+
+  ggtitle('Companies by State')
+
+```
+According to the comp_by_state, CA has the most companies , and followed by TX and NY. Even though TX and NY have the 2nd and 3rd most companies, they are just have of what CA has. 
+
+
+## Quesiton 2
+
+Lets dig in on the state with the 3rd most companies in the data set. Imagine you work for the state and are interested in how many people are employed by companies in different industries. Create a plot that shows the average and/or median employment by industry for companies in this state (only use cases with full data, use R's `complete.cases()` function.) In addition to this, your graph should show how variable the ranges are, and you should deal with outliers.
+
+
+As above plot shows, NY has the 3rd most companies among the states. 
+
+```{r}
+NO_NA<- inc[complete.cases(inc), ]
+
+
+ny_data<-NO_NA %>%
+    filter(State == 'NY') %>%
+    group_by(Industry) %>%
+    summarise(median_employee = median(Employees), mean_employee = mean(Employees) )%>%
+    arrange(desc(median_employee))
+
+    
+ggplot(ny_data, aes(x = reorder(Industry,median_employee), y = median_employee )) +
+        geom_col(fill = 'orange') +
+        coord_flip()+
+        xlab('Industry') +
+        ylab('Median Employment')+
+        ggtitle('Employment in NY industry')
+
+
+
+
+
+
+
+NY_DATA<-NO_NA %>%
+  filter(State == 'NY')
+
+ggplot(NY_DATA, aes(x = Industry, y = Employees))+
+      geom_boxplot(fill = 'green')+
+      coord_flip()+
+      scale_y_log10()+
+      ggtitle('Distribution of Employment for NY Companies')
+
+
+
+```
+According to the plot of NY median employment, the Environment Service and Energy overwhelms other industries,and followed by Financial Service and Software industries.
+
+
+## Question 3
+
+Now imagine you work for an investor and want to see which industries generate the most revenue per employee. Create a chart that makes this information clear. Once again, the distribution per industry should be shown.
+
+```{r}
+revenue_employee<-NO_NA %>%
+    group_by(Industry) %>%
+    summarise(total_revenue = sum(Revenue),total_employees = sum(Employees))%>%
+    mutate(revenue_per_employee = total_revenue/total_employees)%>%
+    arrange(desc(revenue_per_employee))
+
+head(revenue_employee)
+
+
+ggplot(revenue_employee, aes(x = reorder(Industry,revenue_per_employee), y = revenue_per_employee )) +
+        geom_col(fill = 'Blue') +
+        coord_flip()+
+        xlab('Industries')+
+        ylab('revenue per employee')+
+        ggtitle('List of Revenues per Employee in Differnt Industries')
+     
+
+
+
+
+```
+
+Overall, the employees in Computer Hardware industries makes the most revenues. The total revenue of Computer Hardware and Energy are very closed. However, the Energy industry requires more employees compare to computer Hardware industry. Therefore, I recommed to invest in Computer Hardware industry.
+
